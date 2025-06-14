@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   build:
@@ -44,4 +45,4 @@ jobs:
       - name: Add SonarQube Summary
         run: |
           echo "### 🔍 SonarQube Scan Complete" >> $GITHUB_STEP_SUMMARY
-          echo "- [📊 View Report in SonarQube](http://194.163.40.149:9000/dashboard?id=sonarqube-testing)" >> $GITHUB_STEP_SUMMARY
+          echo "- [📊 View Report in SonarQube](${{ secrets.SONAR_HOST_URL }}/dashboard?id=Sonarqube-testing)" >> $GITHUB_STEP_SUMMARY
