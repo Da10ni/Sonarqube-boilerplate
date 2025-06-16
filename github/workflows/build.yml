@@ -2,12 +2,10 @@ name: Build and Test
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main, master ]  # Support both main and master
   pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [ main, master ]
+  workflow_dispatch:  # Manual trigger
 
 jobs:
   test-and-sonar:
@@ -27,10 +25,30 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci --prefer-offline --no-audit
+          
+      - name: Verify installation
+        run: |
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          npm list --depth=0
         
       - name: Run tests with coverage
-        run: npm run test:coverage
+        run: |
+          npm run test:coverage
+          echo "Coverage files generated:"
+          ls -la coverage/ || echo "No coverage directory found"
+          
+      - name: Verify coverage files
+        run: |
+          if [ -f "coverage/lcov.info" ]; then
+            echo "✅ Coverage file found"
+            echo "Coverage file size: $(wc -l < coverage/lcov.info) lines"
+          else
+            echo "❌ Coverage file missing"
+            exit 1
+          fi
         
       - name: Build project
         run: npm run build
@@ -48,20 +66,30 @@ jobs:
           
       - name: Run SonarQube Analysis
         env:
-          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
+          echo "Starting SonarQube analysis..."
+          echo "SonarQube URL: $SONAR_HOST_URL"
+          echo "Project Key: react-sonarqube-testing"
+          
+          # Check if sonar-scanner is available
+          which sonar-scanner || echo "SonarQube scanner not found in PATH"
+          
+          # Run analysis with verbose output
           sonar-scanner \
-            -Dsonar.projectKey=sonarqube-testing \
-            -Dsonar.projectName='sonarqube-testing' \
+            -Dsonar.projectKey=Sonarqube-testing \
+            -Dsonar.projectName='Sonarqube-Testing' \
             -Dsonar.sources=src \
             -Dsonar.tests=src \
             -Dsonar.test.inclusions='**/*.test.jsx,**/*.test.js,**/*.spec.jsx,**/*.spec.js' \
             -Dsonar.exclusions='**/node_modules/**,**/dist/**,**/coverage/**,**/*.config.js,**/*.config.ts,**/public/**' \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.sourceEncoding=UTF-8 \
+            -Dsonar.host.url=$SONAR_HOST_URL \
+            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.verbose=true
             
       - name: Add SonarQube Summary
         if: always()
