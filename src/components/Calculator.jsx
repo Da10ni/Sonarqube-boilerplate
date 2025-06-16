@@ -5,6 +5,7 @@ const Calculator = () => {
   const [firstNumber, setFirstNumber] = useState("");
   const [secondNumber, setSecondNumber] = useState("");
   const [operation, setOperation] = useState("");
+  
 
   const add = (a, b) => a + b;
   const subtract = (a, b) => a - b;
