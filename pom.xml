@@ -14,10 +14,10 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     
     <!-- SonarQube properties -->
-    <sonar.projectKey>Sonarqube-testing</sonar.projectKey>
-    <sonar.projectName>Sonarqube-testing</sonar.projectName>
-    <sonar.host.url>http://194.163.40.149:9000</sonar.host.url>
-    <sonar.login>sqp_f70cb158261b6110ccfb9995cf44effce94476b4</sonar.login>
+    <sonar.projectKey>sonarqube-testing</sonar.projectKey>
+    <sonar.projectName>sonarqube-testing</sonar.projectName>
+    <sonar.host.url>http://3.140.201.58:9000</sonar.host.url>
+    <sonar.login>sqp_0521d96305b1f799e03c4f931b27ecb0cd357d43</sonar.login>
     
     <!-- Coverage report paths -->
     <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>

@@ -1,0 +1,48 @@
+{
+  "name": "Custom Quality Gate - Consolidated",
+  "description": "Quality gate for organized data collection and consolidation",
+  "conditions": [
+    {
+      "metric": "coverage",
+      "operator": "LT",
+      "threshold": "80.0",
+      "description": "Coverage on new code should be at least 80%"
+    },
+    {
+      "metric": "new_reliability_rating",
+      "operator": "GT",
+      "threshold": "1",
+      "description": "Reliability rating on new code should be A"
+    },
+    {
+      "metric": "new_security_rating",
+      "operator": "GT",
+      "threshold": "1",
+      "description": "Security rating on new code should be A"
+    },
+    {
+      "metric": "new_maintainability_rating",
+      "operator": "GT",
+      "threshold": "1",
+      "description": "Maintainability rating on new code should be A"
+    },
+    {
+      "metric": "new_duplicated_lines_density",
+      "operator": "GT",
+      "threshold": "3.0",
+      "description": "Duplicated lines on new code should be less than 3%"
+    },
+    {
+      "metric": "new_security_hotspots_reviewed",
+      "operator": "LT",
+      "threshold": "100",
+      "description": "Security hotspots on new code should be 100% reviewed"
+    }
+  ],
+  "organization_settings": {
+    "data_retention": "1 year",
+    "trend_analysis": "enabled",
+    "issue_categorization": "by_severity_and_type",
+    "reporting_frequency": "daily"
+  }
+}
