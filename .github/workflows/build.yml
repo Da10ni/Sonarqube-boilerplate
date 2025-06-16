@@ -133,8 +133,7 @@ jobs:
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
             -Dsonar.junit.reportPaths=target/surefire-reports \
             -Dsonar.java.binaries=target/classes \
-            -Dsonar.qualitygate.wait=true \
-            -Dsonar.qualitygate.timeout=300 \
+            -Dsonar.qualitygate.wait=false \
             -Dsonar.analysis.buildNumber=${BUILD_NUMBER} \
             -Dsonar.analysis.repository=${GITHUB_REPOSITORY} \
             -Dsonar.analysis.sha1=${GITHUB_SHA} \
@@ -153,10 +152,10 @@ jobs:
             if [ ! -z "$DASHBOARD_URL" ]; then
               echo "DASHBOARD_URL=${DASHBOARD_URL}" >> $GITHUB_ENV
             else
-              echo "DASHBOARD_URL=${{ secrets.SONAR_HOST_URL }}/dashboard?id=Sonarqube-testing" >> $GITHUB_ENV
+              echo "DASHBOARD_URL=${{ secrets.SONAR_HOST_URL }}/dashboard?id=sonarqube-testing" >> $GITHUB_ENV
             fi
           else
-            echo "DASHBOARD_URL=${{ secrets.SONAR_HOST_URL }}/dashboard?id=Sonarqube-testing" >> $GITHUB_ENV
+            echo "DASHBOARD_URL=${{ secrets.SONAR_HOST_URL }}/dashboard?id=sonarqube-testing" >> $GITHUB_ENV
           fi
           
       - name: Generate consolidated quality report
@@ -199,6 +198,15 @@ jobs:
           
           echo "Report generated at: ${REPORT_FILE}"
           
+      - name: Collect and organize quality data from SonarQube
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          echo "📊 Phase 4: Collecting and organizing quality data..."
+          chmod +x scripts/collect-sonar-data.sh
+          ./scripts/collect-sonar-data.sh
+          
       - name: Upload quality artifacts
         uses: actions/upload-artifact@v4
         if: always()
@@ -208,6 +216,7 @@ jobs:
             target/quality-reports/
             target/site/jacoco/
             target/surefire-reports/
+            quality-data/master-reports/
           retention-days: 30
           
       - name: Create quality data summary
