@@ -1,0 +1,2 @@
+﻿Date,Build,Project,Coverage %,Bugs,Vulnerabilities,Code Smells,Lines of Code,Duplicated Lines %,Quality Gate,Reliability Rating,Security Rating,Maintainability Rating,New Code Issues,Analysis Time
+2025-06-16 19:11:34 UTC,data-collection-202506161911,sonarqube-testing,100,0,1,6,141,0.0,FAILED,A,E,A,2,2 hours ago
