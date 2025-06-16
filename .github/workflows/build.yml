@@ -43,9 +43,9 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=Sonarqube-testing -Dsonar.projectName='Sonarqube-testing'
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=sonarqube-testing -Dsonar.projectName='sonarqube-testing'
         
       - name: Add SonarQube Summary
         run: |
           echo "### 🔍 SonarQube Scan Complete" >> $GITHUB_STEP_SUMMARY
-          echo "- [📊 View Report in SonarQube](${{ secrets.SONAR_HOST_URL }}/dashboard?id=Sonarqube-testing)" >> $GITHUB_STEP_SUMMARY
+          echo "- [📊 View Report in SonarQube](${{ secrets.SONAR_HOST_URL }}/dashboard?id=sonarqube-testing)" >> $GITHUB_STEP_SUMMARY
