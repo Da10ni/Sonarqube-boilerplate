@@ -204,8 +204,8 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
           echo "📊 Phase 4: Collecting and organizing quality data..."
-          chmod +x scripts/collect-sonar-data.sh
-          ./scripts/collect-sonar-data.sh
+          chmod +x scripts/collect-sonar-data.ps1
+          ./scripts/collect-sonar-data.ps1
           
       - name: Upload quality artifacts
         uses: actions/upload-artifact@v4
