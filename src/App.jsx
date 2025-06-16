@@ -5,7 +5,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>React + Vite + SonarQube Demo</h1>
+        <h1>React + Vite + SonarQube</h1>
         <Calculator />
       </header>
     </div>
