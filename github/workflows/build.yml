@@ -1,0 +1,71 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test-and-sonar:
+    name: Test and SonarQube Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones disabled for better relevancy of analysis
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests with coverage
+        run: npm run test:coverage
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+          
+      - name: Install SonarQube Scanner
+        run: |
+          npm install -g sonarqube-scanner
+          
+      - name: Run SonarQube Analysis
+        env:
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          sonar-scanner \
+            -Dsonar.projectKey=sonarqube-testing \
+            -Dsonar.projectName='sonarqube-testing' \
+            -Dsonar.sources=src \
+            -Dsonar.tests=src \
+            -Dsonar.test.inclusions='**/*.test.jsx,**/*.test.js,**/*.spec.jsx,**/*.spec.js' \
+            -Dsonar.exclusions='**/node_modules/**,**/dist/**,**/coverage/**,**/*.config.js,**/*.config.ts,**/public/**' \
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            
+      - name: Add SonarQube Summary
+        if: always()
+        run: |
+          echo "### 🔍 SonarQube Analysis Complete" >> $GITHUB_STEP_SUMMARY
+          echo "- [📊 View Report in SonarQube](${{ secrets.SONAR_HOST_URL }}/dashboard?id=react-sonarqube-testing)" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests: $(find coverage -name 'lcov.info' -exec wc -l {} \; | awk '{print $1}') lines covered" >> $GITHUB_STEP_SUMMARY
