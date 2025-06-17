@@ -3,7 +3,7 @@
 # Phase 4: Collect and organize quality data from SonarQube - ENHANCED SECURE VERSION
 set -e
 
-SONAR_URL="${SONAR_HOST_URL}"
+SONAR_HOST_URL="${SONAR_HOST_URL}"
 SONAR_TOKEN="${SONAR_TOKEN}"
 PROJECT_KEY="sonarqube-testing"
 TIMESTAMP=$(date -u +"%Y%m%d_%H%M%S")
