@@ -9,13 +9,13 @@ PROJECT_KEY="sonarqube-testing"
 TIMESTAMP=$(date -u +"%Y%m%d_%H%M%S")
 
 # Security check - no hardcoded credentials
-if [ -z "$SONAR_URL" ] || [ -z "$SONAR_TOKEN" ]; then
+if [ -z "$SONAR_HOST_URL" ] || [ -z "$SONAR_TOKEN" ]; then
     echo "❌ ERROR: Environment variables SONAR_HOST_URL and SONAR_TOKEN must be set"
     exit 1
 fi
 
 echo "📊 Phase 4: Enhanced SonarQube Data Collection (SECURE)"
-echo "🔗 SonarQube URL: $SONAR_URL"
+echo "🔗 SonarQube URL: $SONAR_HOST_URL"
 echo "📋 Project: $PROJECT_KEY"
 echo "⏰ Timestamp: $TIMESTAMP"
 
@@ -36,7 +36,7 @@ call_sonar_api() {
     
     # Make API call with proper authentication
     HTTP_CODE=$(curl -s -w "%{http_code}" -u "${SONAR_TOKEN}:" \
-        "${SONAR_URL}/api/${endpoint}" \
+        "${SONAR_HOST_URL}/api/${endpoint}" \
         -o "${output_file}" || echo "000")
     
     if [ "$HTTP_CODE" = "200" ]; then
@@ -160,9 +160,9 @@ $(cat "quality-data/processed-data/issues_summary_${TIMESTAMP}.txt" 2>/dev/null 
 \`\`\`
 
 ## 🔗 Links
-- **Dashboard**: ${SONAR_URL}/dashboard?id=${PROJECT_KEY}
-- **Issues**: ${SONAR_URL}/project/issues?resolved=false&id=${PROJECT_KEY}
-- **Coverage**: ${SONAR_URL}/component_measures?id=${PROJECT_KEY}&metric=coverage
+- **Dashboard**: ${SONAR_HOST_URL}/dashboard?id=${PROJECT_KEY}
+- **Issues**: ${SONAR_HOST_URL}/project/issues?resolved=false&id=${PROJECT_KEY}
+- **Coverage**: ${SONAR_HOST_URL}/component_measures?id=${PROJECT_KEY}&metric=coverage
 
 ## 📂 Data Files Generated
 - Project metrics: \`raw-data/project_metrics_${TIMESTAMP}.json\`
@@ -199,4 +199,4 @@ echo "📊 CSV tracking: quality-data/master-reports/master-quality-report.csv"
 echo "🔗 Latest report: quality-data/master-reports/latest_report.md"
 echo "📂 Raw data files: $(find quality-data/raw-data -name "*${TIMESTAMP}*" | wc -l) files"
 echo ""
-echo "🎯 Next: Review quality gate results at ${SONAR_URL}/dashboard?id=${PROJECT_KEY}"
+echo "🎯 Next: Review quality gate results at ${SONAR_HOST_URL}/dashboard?id=${PROJECT_KEY}"
