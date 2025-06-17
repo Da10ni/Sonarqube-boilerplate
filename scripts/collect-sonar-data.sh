@@ -133,46 +133,61 @@ fi
 
 echo "=== 📋 Generating Enhanced Master Report ==="
 
-# Create comprehensive master report
+# Create comprehensive master report using echo statements (NO HEREDOC)
 MASTER_REPORT="quality-data/master-reports/master_quality_report_${TIMESTAMP}.md"
 
-cat > "${MASTER_REPORT}" << EOF
-# 📊 Master Quality Report
+echo "# 📊 Master Quality Report" > "${MASTER_REPORT}"
+echo "" >> "${MASTER_REPORT}"
+echo "**Generated**: $(date -u)" >> "${MASTER_REPORT}"
+echo "**Project**: ${PROJECT_KEY}" >> "${MASTER_REPORT}"
+echo "**Build**: ${BUILD_NUMBER:-N/A}" >> "${MASTER_REPORT}"
+echo "**Commit**: ${GITHUB_SHA:-N/A}" >> "${MASTER_REPORT}"
+echo "" >> "${MASTER_REPORT}"
 
-**Generated**: $(date -u)  
-**Project**: ${PROJECT_KEY}  
-**Build**: ${BUILD_NUMBER:-"N/A"}  
-**Commit**: ${GITHUB_SHA:-"N/A"}  
+echo "## 🎯 Quality Gate Status" >> "${MASTER_REPORT}"
+echo "\`\`\`" >> "${MASTER_REPORT}"
+if [ -f "quality-data/processed-data/quality_gate_status_${TIMESTAMP}.txt" ]; then
+    cat "quality-data/processed-data/quality_gate_status_${TIMESTAMP}.txt" >> "${MASTER_REPORT}"
+else
+    echo "Status: Data collection in progress" >> "${MASTER_REPORT}"
+fi
+echo "\`\`\`" >> "${MASTER_REPORT}"
+echo "" >> "${MASTER_REPORT}"
 
-## 🎯 Quality Gate Status
-\`\`\`
-$(cat "quality-data/processed-data/quality_gate_status_${TIMESTAMP}.txt" 2>/dev/null || echo "Status: Data collection in progress")
-\`\`\`
+echo "## 📈 Key Quality Metrics" >> "${MASTER_REPORT}"
+echo "\`\`\`" >> "${MASTER_REPORT}"
+if [ -f "quality-data/processed-data/key_metrics_${TIMESTAMP}.txt" ]; then
+    cat "quality-data/processed-data/key_metrics_${TIMESTAMP}.txt" >> "${MASTER_REPORT}"
+else
+    echo "Metrics: Processing..." >> "${MASTER_REPORT}"
+fi
+echo "\`\`\`" >> "${MASTER_REPORT}"
+echo "" >> "${MASTER_REPORT}"
 
-## 📈 Key Quality Metrics
-\`\`\`
-$(cat "quality-data/processed-data/key_metrics_${TIMESTAMP}.txt" 2>/dev/null || echo "Metrics: Processing...")
-\`\`\`
+echo "## 🐛 Issues Analysis" >> "${MASTER_REPORT}"
+echo "\`\`\`" >> "${MASTER_REPORT}"
+if [ -f "quality-data/processed-data/issues_summary_${TIMESTAMP}.txt" ]; then
+    cat "quality-data/processed-data/issues_summary_${TIMESTAMP}.txt" >> "${MASTER_REPORT}"
+else
+    echo "Issues: No critical issues detected" >> "${MASTER_REPORT}"
+fi
+echo "\`\`\`" >> "${MASTER_REPORT}"
+echo "" >> "${MASTER_REPORT}"
 
-## 🐛 Issues Analysis
-\`\`\`
-$(cat "quality-data/processed-data/issues_summary_${TIMESTAMP}.txt" 2>/dev/null || echo "Issues: No critical issues detected")
-\`\`\`
+echo "## 🔗 Links" >> "${MASTER_REPORT}"
+echo "- **Dashboard**: ${SONAR_HOST_URL}/dashboard?id=${PROJECT_KEY}" >> "${MASTER_REPORT}"
+echo "- **Issues**: ${SONAR_HOST_URL}/project/issues?resolved=false&id=${PROJECT_KEY}" >> "${MASTER_REPORT}"
+echo "- **Coverage**: ${SONAR_HOST_URL}/component_measures?id=${PROJECT_KEY}&metric=coverage" >> "${MASTER_REPORT}"
+echo "" >> "${MASTER_REPORT}"
 
-## 🔗 Links
-- **Dashboard**: ${SONAR_HOST_URL}/dashboard?id=${PROJECT_KEY}
-- **Issues**: ${SONAR_HOST_URL}/project/issues?resolved=false&id=${PROJECT_KEY}
-- **Coverage**: ${SONAR_HOST_URL}/component_measures?id=${PROJECT_KEY}&metric=coverage
-
-## 📂 Data Files Generated
-- Project metrics: \`raw-data/project_metrics_${TIMESTAMP}.json\`
-- Quality gate: \`raw-data/quality_gate_${TIMESTAMP}.json\`
-- Issues data: \`raw-data/issues_${TIMESTAMP}.json\`
-- Coverage details: \`raw-data/coverage_details_${TIMESTAMP}.json\`
-
----
-*Phase 4 Complete: Quality data collected and organized securely*
-EOF
+echo "## 📂 Data Files Generated" >> "${MASTER_REPORT}"
+echo "- Project metrics: \`raw-data/project_metrics_${TIMESTAMP}.json\`" >> "${MASTER_REPORT}"
+echo "- Quality gate: \`raw-data/quality_gate_${TIMESTAMP}.json\`" >> "${MASTER_REPORT}"
+echo "- Issues data: \`raw-data/issues_${TIMESTAMP}.json\`" >> "${MASTER_REPORT}"
+echo "- Coverage details: \`raw-data/coverage_details_${TIMESTAMP}.json\`" >> "${MASTER_REPORT}"
+echo "" >> "${MASTER_REPORT}"
+echo "---" >> "${MASTER_REPORT}"
+echo "*Phase 4 Complete: Quality data collected and organized securely*" >> "${MASTER_REPORT}"
 
 # Create/Update master CSV for tracking
 echo "=== 📊 Updating Master Tracking Sheet ==="
@@ -188,7 +203,7 @@ COVERAGE=$(grep "coverage:" "quality-data/processed-data/key_metrics_${TIMESTAMP
 TOTAL_ISSUES=$(grep "Total Issues:" "quality-data/processed-data/issues_summary_${TIMESTAMP}.txt" 2>/dev/null | cut -d':' -f2 | xargs || echo "0")
 
 # Append new data
-echo "$(date -u),$PROJECT_KEY,${BUILD_NUMBER:-"N/A"},${GITHUB_SHA:-"N/A"},$QUALITY_GATE,$COVERAGE,$TOTAL_ISSUES,Collected" >> quality-data/master-reports/master-quality-report.csv
+echo "$(date -u),$PROJECT_KEY,${BUILD_NUMBER:-N/A},${GITHUB_SHA:-N/A},$QUALITY_GATE,$COVERAGE,$TOTAL_ISSUES,Collected" >> quality-data/master-reports/master-quality-report.csv
 
 # Create latest symlinks for easy access
 ln -sf "master_quality_report_${TIMESTAMP}.md" "quality-data/master-reports/latest_report.md"
