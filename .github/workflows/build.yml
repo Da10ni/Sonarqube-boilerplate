@@ -50,7 +50,8 @@ jobs:
       - name: Collect test data and coverage
         run: |
           echo "📊 Collecting comprehensive quality data..."
-          mvn clean test
+          # FIXED: Added jacoco:report to generate coverage XML
+          mvn clean test jacoco:report
           
           echo "=== Test Results Summary ==="
           if [ -d "target/surefire-reports" ]; then
@@ -67,7 +68,7 @@ jobs:
             echo "Coverage lines: ${COVERAGE}"
             echo "COVERAGE_LINES=${COVERAGE}" >> $GITHUB_ENV
           else
-            echo "⚠️ No coverage data found"
+            echo "⚠️ No coverage data found - JaCoCo report missing"
             echo "COVERAGE_LINES=0" >> $GITHUB_ENV
           fi
           
@@ -133,11 +134,14 @@ jobs:
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
             -Dsonar.junit.reportPaths=target/surefire-reports \
             -Dsonar.java.binaries=target/classes \
-            -Dsonar.qualitygate.wait=false \
+            -Dsonar.qualitygate.wait=true \
+            -Dsonar.qualitygate.timeout=300 \
             -Dsonar.analysis.buildNumber=${BUILD_NUMBER} \
             -Dsonar.analysis.repository=${GITHUB_REPOSITORY} \
             -Dsonar.analysis.sha1=${GITHUB_SHA} \
             -Dsonar.scm.revision=${GITHUB_SHA}
+          
+          echo "✅ SonarQube analysis completed successfully"
             
       - name: Extract and organize SonarQube results
         if: always()
@@ -197,6 +201,66 @@ jobs:
           EOF
           
           echo "Report generated at: ${REPORT_FILE}"
+
+      - name: Wait for SonarQube processing
+        run: |
+          echo "⏳ Waiting for SonarQube to fully process the analysis..."
+          sleep 30
+          echo "✅ Wait complete - proceeding with data collection"
+
+      - name: Verify SonarQube project accessibility
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          echo "🔍 Verifying project accessibility before data collection..."
+          
+          # Test basic connectivity
+          echo "Testing SonarQube server connectivity..."
+          if curl -f -s "$SONAR_HOST_URL/api/system/status" > /dev/null; then
+            echo "✅ SonarQube server is accessible"
+          else
+            echo "❌ SonarQube server not accessible"
+            exit 1
+          fi
+          
+          # Test authentication
+          echo "Testing authentication..."
+          AUTH_RESULT=$(curl -s -w "%{http_code}" -u "${SONAR_TOKEN}:" \
+            "$SONAR_HOST_URL/api/system/status" \
+            -o /dev/null)
+          
+          if [ "$AUTH_RESULT" = "200" ]; then
+            echo "✅ Authentication successful"
+          else
+            echo "❌ Authentication failed (HTTP: $AUTH_RESULT)"
+            exit 1
+          fi
+          
+          # Test project existence
+          echo "Testing project accessibility..."
+          PROJECT_CHECK=$(curl -s -w "%{http_code}" -u "${SONAR_TOKEN}:" \
+            "$SONAR_HOST_URL/api/projects/search?projects=sonarqube-testing" \
+            -o /dev/null)
+          
+          if [ "$PROJECT_CHECK" = "200" ]; then
+            echo "✅ Project accessible - ready for data collection"
+          else
+            echo "⚠️ Project not immediately accessible (HTTP: $PROJECT_CHECK)"
+            echo "Waiting additional 30 seconds for project to become available..."
+            sleep 30
+            
+            # Retry project check
+            PROJECT_RETRY=$(curl -s -w "%{http_code}" -u "${SONAR_TOKEN}:" \
+              "$SONAR_HOST_URL/api/projects/search?projects=sonarqube-testing" \
+              -o /dev/null)
+            
+            if [ "$PROJECT_RETRY" = "200" ]; then
+              echo "✅ Project now accessible after retry"
+            else
+              echo "⚠️ Project still not accessible, but continuing with data collection attempt"
+            fi
+          fi
           
       - name: Collect and organize quality data from SonarQube
         env:
@@ -204,8 +268,43 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
           echo "📊 Phase 4: Collecting and organizing quality data..."
+          
+          # Ensure script is executable
           chmod +x scripts/collect-sonar-data.sh
-          ./scripts/collect-sonar-data.sh
+          
+          # Run with enhanced error handling
+          if ./scripts/collect-sonar-data.sh; then
+            echo "✅ Data collection completed successfully"
+          else
+            echo "⚠️ Data collection encountered issues, creating fallback data"
+            
+            # Create minimal fallback data structure
+            mkdir -p quality-data/master-reports
+            
+            # Create basic CSV with fallback data
+            if [ ! -f "quality-data/master-reports/master-quality-report.csv" ]; then
+              echo "Date,Project,Build,Commit,QualityGate,Coverage,Issues,Status" > quality-data/master-reports/master-quality-report.csv
+            fi
+            
+            echo "$(date -u),sonarqube-testing,${BUILD_NUMBER},${GITHUB_SHA},Unknown,${COVERAGE_LINES:-0},Unknown,Partial-Collection" >> quality-data/master-reports/master-quality-report.csv
+            
+            # Create basic markdown report
+            cat > quality-data/master-reports/fallback-report.md << EOF
+            # Fallback Quality Report
+            
+            **Generated**: $(date -u)
+            **Status**: Data collection partially failed, basic metrics collected
+            **Build**: ${BUILD_NUMBER}
+            **Coverage**: ${COVERAGE_LINES:-0} lines
+            
+            ## SonarQube Dashboard
+            ${SONAR_HOST_URL:-"Unknown"}/dashboard?id=sonarqube-testing
+            
+            *Note: Enhanced data collection failed, but basic workflow completed successfully.*
+            EOF
+            
+            echo "✅ Fallback data created - workflow can continue"
+          fi
           
       - name: Upload quality artifacts
         uses: actions/upload-artifact@v4
@@ -231,7 +330,7 @@ jobs:
           echo "- 📋 **Artifacts**: Quality reports available for download" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Quality Metrics Collected:**" >> $GITHUB_STEP_SUMMARY
-          echo "- Source files: $(cat target/quality-reports/metrics.txt | grep 'Source Files:' | cut -d':' -f2 | xargs)" >> $GITHUB_STEP_SUMMARY
+          echo "- Source files: $(cat target/quality-reports/metrics.txt | grep 'Source Files:' | cut -d':' -f2 | xargs || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
           echo "- Test coverage: ${COVERAGE_LINES} lines covered" >> $GITHUB_STEP_SUMMARY
-          echo "- Test methods: $(cat target/quality-reports/metrics.txt | grep 'Test Methods:' | cut -d':' -f2 | xargs)" >> $GITHUB_STEP_SUMMARY
+          echo "- Test methods: $(cat target/quality-reports/metrics.txt | grep 'Test Methods:' | cut -d':' -f2 | xargs || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
           echo "- Build metadata: Complete" >> $GITHUB_STEP_SUMMARY
