@@ -19,5 +19,4 @@ public class Calculator {
         }
         return a / b;
     }
-    // This is a simple calculator classs
 }
